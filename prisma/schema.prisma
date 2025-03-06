@@ -7,27 +7,22 @@ generator client {
   provider = "prisma-client-js"
 }
 
-generator erd {
-  provider = "prisma-erd-generator"
-  output   = "erd.html"
-}
-
 model User {
   id        Int      @id @default(autoincrement())
   email     String   @unique
   name      String
   phone     String?
   password  String?
-  status    String   @default("admin") // No enum, string with default "admin" | admin, guest, teacher, student
+  status    String   @default("guest") // No enum, string with default "guest"
   student   Student?
   teacher   Teacher?
 }
 
 model DateSpan {
-  id        Int      @id @default(autoincrement())
-  startDate DateTime
-  endDate   DateTime
-  students  Student[] // One-to-many: A DateSpan can belong to multiple Students (if shared)
+  id                Int      @id @default(autoincrement())
+  startDate         DateTime
+  endDate           DateTime
+  students          Student[] // One-to-many: A DateSpan can belong to multiple Students (if shared)
   forecastPrediction ForecastPrediction? // One-to-one: A DateSpan for one ForecastPrediction
 }
 
@@ -39,6 +34,7 @@ model Student {
   level     Int?
   bookings  Booking[]
   dateSpans DateSpan[] // One-to-many: A Student can have multiple DateSpans
+  lessons   Lesson[]  // One-to-many: A Student can be in multiple Lessons
   userId    Int       @unique // One-to-one: A User is a Student
   user      User      @relation(fields: [userId], references: [id])
 }
@@ -54,7 +50,7 @@ model Teacher {
 model Booking {
   id        Int      @id @default(autoincrement())
   status    Int
-  paymentId Int?     // Optional: Booking without payment is fine
+  paymentId Int?     @unique // One-to-one: Optional payment
   sessionId Int?
   studentsId Int
   student   Student  @relation(fields: [studentsId], references: [id])
@@ -76,14 +72,14 @@ model Session {
 model Lesson {
   id               Int                @id @default(autoincrement())
   sessionId        Int?
-  feedbackId       Int?
-  confirmationId   Int?
+  feedbackId       Int?               @unique // One-to-one
+  confirmationId   Int?               @unique // One-to-one
   session          Session?           @relation(fields: [sessionId], references: [id])
-  feedback         Feedback?          @relation(fields: [feedbackId], references: [id])
-  confirmation     LessonConfirmation? @relation(fields: [confirmationId], references: [id])
+  feedback         Feedback?          @relation // Reverse relation
+  confirmation     LessonConfirmation? @relation // Reverse relation
   teacher          Teacher?           @relation(fields: [teacherId], references: [id])
   teacherId        Int?
-  students         Student[]
+  students         Student[]          // One-to-many
 }
 
 model LessonConfirmation {
@@ -104,7 +100,7 @@ model Payment {
 model Feedback {
   id      Int     @id @default(autoincrement())
   comment String?
-  lessonId Int?   // Optional: Feedback might not always be tied to a Lesson
+  lessonId Int?   @unique // One-to-one, optional
   lesson  Lesson? @relation(fields: [lessonId], references: [id])
 }
 
