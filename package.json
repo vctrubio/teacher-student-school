@@ -10,7 +10,15 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "@prisma/client": "^6.4.1",
-    "prisma": "^6.4.1"
+    "@adminjs/express": "^6.1.1",
+    "@adminjs/prisma": "^5.0.3",
+    "@prisma/client": "^5.15.2",
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.13.9",
+    "adminjs": "^7.8.15",
+    "express": "^4.21.2",
+    "prisma": "^6.4.1",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.2"
   }
 }
