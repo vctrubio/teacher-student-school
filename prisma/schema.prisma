@@ -1,14 +1,157 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
 
 generator client {
   provider = "prisma-client-js"
 }
 
-datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+generator erd {
+  provider = "prisma-erd-generator"
+  output   = "erd.html"
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  name      String
+  phone     String?
+  password  String?
+  status    String   @default("admin") // No enum, string with default "admin" | admin, guest, teacher, student
+  student   Student?
+  teacher   Teacher?
+}
+
+model DateSpan {
+  id        Int      @id @default(autoincrement())
+  startDate DateTime
+  endDate   DateTime
+  students  Student[] // One-to-many: A DateSpan can belong to multiple Students (if shared)
+  forecastPrediction ForecastPrediction? // One-to-one: A DateSpan for one ForecastPrediction
+}
+
+model Student {
+  id        Int      @id @default(autoincrement())
+  lessonId  Int?
+  weight    Int?
+  height    Int?
+  level     Int?
+  bookings  Booking[]
+  dateSpans DateSpan[] // One-to-many: A Student can have multiple DateSpans
+  userId    Int       @unique // One-to-one: A User is a Student
+  user      User      @relation(fields: [userId], references: [id])
+}
+
+model Teacher {
+  id        Int      @id @default(autoincrement())
+  lessonsId Int?
+  lessons   Lesson[]
+  userId    Int       @unique // One-to-one: A User is a Teacher
+  user      User      @relation(fields: [userId], references: [id])
+}
+
+model Booking {
+  id        Int      @id @default(autoincrement())
+  status    Int
+  paymentId Int?     // Optional: Booking without payment is fine
+  sessionId Int?
+  studentsId Int
+  student   Student  @relation(fields: [studentsId], references: [id])
+  payment   Payment? @relation(fields: [paymentId], references: [id])
+  session   Session? @relation(fields: [sessionId], references: [id])
+}
+
+model Session {
+  id        Int         @id @default(autoincrement())
+  date      DateTime
+  time      String
+  forecastId Int?
+  bookings  Booking[]
+  lessons   Lesson[]
+  forecast  Forecast?   @relation(fields: [forecastId], references: [id])
+  equipments Equipment[] // One-to-many: A Session can have many Equipments
+}
+
+model Lesson {
+  id               Int                @id @default(autoincrement())
+  sessionId        Int?
+  feedbackId       Int?
+  confirmationId   Int?
+  session          Session?           @relation(fields: [sessionId], references: [id])
+  feedback         Feedback?          @relation(fields: [feedbackId], references: [id])
+  confirmation     LessonConfirmation? @relation(fields: [confirmationId], references: [id])
+  teacher          Teacher?           @relation(fields: [teacherId], references: [id])
+  teacherId        Int?
+  students         Student[]
+}
+
+model LessonConfirmation {
+  id              Int      @id @default(autoincrement())
+  userRating      Int?
+  teacherApproval Int
+  userComment     String?
+  lessonId        Int      @unique // One-to-one with Lesson
+  lesson          Lesson   @relation(fields: [lessonId], references: [id])
+}
+
+model Payment {
+  id      Int      @id @default(autoincrement())
+  price   Int
+  booking Booking? @relation // One-to-one reverse relation
+}
+
+model Feedback {
+  id      Int     @id @default(autoincrement())
+  comment String?
+  lessonId Int?   // Optional: Feedback might not always be tied to a Lesson
+  lesson  Lesson? @relation(fields: [lessonId], references: [id])
+}
+
+model Equipment {
+  id        Int      @id @default(autoincrement())
+  kiteId    Int?
+  barId     Int?
+  boardId   Int?
+  sessionId Int?     // Foreign key to Session for one-to-many
+  comment   String
+  kite      Kite?    @relation(fields: [kiteId], references: [id])
+  bar       Bar?     @relation(fields: [barId], references: [id])
+  board     Board?   @relation(fields: [boardId], references: [id])
+  session   Session? @relation(fields: [sessionId], references: [id])
+}
+
+model Kite {
+  id        Int          @id @default(autoincrement())
+  size      Int
+  equipment Equipment[]
+}
+
+model Bar {
+  id        Int          @id @default(autoincrement())
+  size      Int
+  equipment Equipment[]
+  newColumn Int?
+}
+
+model Board {
+  id        Int          @id @default(autoincrement())
+  size      Int
+  equipment Equipment[]
+}
+
+model Forecast {
+  id               Int                  @id @default(autoincrement())
+  sessions         Session[]
+  forecastPredictions ForecastPrediction[]
+}
+
+model ForecastPrediction {
+  id              Int      @id @default(autoincrement())
+  knots           Int
+  authorOrModel   String
+  dateSpanId      Int      @unique // One-to-one with DateSpan
+  dateSpan        DateSpan @relation(fields: [dateSpanId], references: [id])
+  forecast        Forecast @relation(fields: [forecastId], references: [id])
+  forecastId      Int
 }
