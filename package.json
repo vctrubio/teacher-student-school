@@ -18,7 +18,9 @@
     "adminjs": "^7.8.15",
     "express": "^4.21.2",
     "prisma": "^6.4.1",
-    "ts-node": "^10.9.2",
     "typescript": "^5.8.2"
+  },
+  "devDependencies": {
+    "ts-node": "^10.9.2"
   }
 }
